@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-import mmap
 import struct
 from collections import namedtuple, OrderedDict
 
@@ -117,13 +116,7 @@ class PAKFileReader(object):
 
     def read(self, path_or_entry):
         """
-        Given a PAKEntry or a path returns a mmap object for the file contents.
-
-        .. note::
-
-            The caller is responsible for cleaning up the mmap object returned
-            by this method. The contextlib.closing() helper can be used for
-            this purpose.
+        Given a PAKEntry or a path returns the file contents.
         """
         if not isinstance(path_or_entry, PAKEntry):
             path_or_entry = self[path_or_entry]
@@ -138,12 +131,8 @@ class PAKFileReader(object):
             ), 'rb')
             self.archive_handles[path_or_entry.archive_num] = parent_archive
 
-        return mmap.mmap(
-            parent_archive.fileno(),
-            length=path_or_entry.size,
-            offset=path_or_entry.offset,
-            access=mmap.ACCESS_READ
-        )
+        parent_archive.seek(path_or_entry.offset)
+        return parent_archive.read(path_or_entry.size)
 
     def __getitem__(self, key):
         return self.file_table[key]

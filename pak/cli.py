@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import sys
 import zlib
-from contextlib import closing
 
 import click
 import lz4.block
@@ -42,18 +41,17 @@ def extract(archive, path):
     reader = PAKFileReader(archive)
     entry = reader[path]
 
-    with closing(reader.read(entry)) as file_entry:
-        if entry.is_lz4block:
-            sys.stdout.write(
-                lz4.block.decompress(
-                    file_entry,
-                    entry.real_size
-                )
+    if entry.is_lz4block:
+        sys.stdout.write(
+            lz4.block.decompress(
+                reader.read(entry),
+                entry.real_size
             )
-        elif entry.is_zlib:
-            sys.stdout.write(zlib.decompress(file_entry))
-        else:
-            sys.stdout.write(file_entry)
+        )
+    elif entry.is_zlib:
+        sys.stdout.write(zlib.decompress(reader.read(entry)))
+    else:
+        sys.stdout.write(reader.read(entry))
 
 
 @click.command()
