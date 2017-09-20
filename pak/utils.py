@@ -73,24 +73,25 @@ def _read_localized_string(fin):
     default_length = struct.unpack('<I', fin.read(4))[0]
     default, handle_length = struct.unpack(
         '<{0}sI'.format(
-            default_length 
+            default_length
         ),
         fin.read(default_length + 4)
     )
     handle = struct.unpack(
         '<{0}s'.format(handle_length),
-        fin.read(handle_length )
+        fin.read(handle_length)
     )[0]
 
     return (
-        default.encode('utf-8').rstrip(u'\x00'),
+        default.decode('utf-8').rstrip(u'\x00'),
         handle.rstrip('\x00')
     )
+
 
 def _read_prefix_string(fin):
     return fin.read(
         struct.unpack('<I', fin.read(4))[0]
-    ).encode('utf-8').rstrip('\x00')
+    ).decode('utf-8').rstrip('\x00')
 
 
 def _read_node(fin, identifier_table):
@@ -149,7 +150,7 @@ def parse_lsb(fin):
     for region in xrange(0, region_count):
         key, value = struct.unpack('<II', fin.read(8))
         region_table[identifier_table[key]] = value
-        
+
     regions = {}
     for region_name, region_offset in region_table.iteritems():
         fin.seek(region_offset)

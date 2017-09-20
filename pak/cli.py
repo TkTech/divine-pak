@@ -3,6 +3,10 @@
 import sys
 import zlib
 import json
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 import click
 import lz4.block
@@ -37,31 +41,33 @@ def list_all(archive):
 @click.command()
 @click.argument('archive', type=click.Path(exists=True))
 @click.argument('path')
-def extract(archive, path):
+@click.option('--lsb-to-json', is_flag=True)
+def extract(archive, path, lsb_to_json):
     """Extract the given path/name from the archive, piping it to stdout.
     """
     reader = PAKFileReader(archive)
     entry = reader[path]
 
     if entry.is_lz4block:
-        sys.stdout.write(
-            lz4.block.decompress(
-                reader.read(entry),
-                entry.real_size
-            )
+        contents = lz4.block.decompress(
+            reader.read(entry),
+            entry.real_size
         )
     elif entry.is_zlib:
-        sys.stdout.write(zlib.decompress(reader.read(entry)))
+        contents = zlib.decompress(reader.read(entry))
     else:
-        sys.stdout.write(reader.read(entry))
+        contents = reader.read(entry)
 
+    if lsb_to_json:
+        json.dump(
+            parse_lsb(StringIO(contents)),
+            sys.stdout,
+            indent=4,
+            sort_keys=True
+        )
+        return
 
-@click.command()
-@click.argument('path', type=click.Path(exists=True))
-def lsb_to_json(path):
-    with open(path, 'rb') as fin:
-        lsb = parse_lsb(fin)
-        print(json.dumps(lsb, indent=4))
+    sys.stdout.write(contents)
 
 
 @click.command()
@@ -102,4 +108,3 @@ def details(archive, path):
 cli.add_command(list_all)
 cli.add_command(extract)
 cli.add_command(details)
-cli.add_command(lsb_to_json)
