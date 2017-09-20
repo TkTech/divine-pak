@@ -2,11 +2,13 @@
 # -*- coding: utf-8 -*-
 import sys
 import zlib
+import json
 
 import click
 import lz4.block
 
 from pak.reader import PAKFileReader
+from pak.utils import parse_lsb
 
 
 def sizeof_fmt(num, suffix='B'):
@@ -55,6 +57,14 @@ def extract(archive, path):
 
 
 @click.command()
+@click.argument('path', type=click.Path(exists=True))
+def lsb_to_json(path):
+    with open(path, 'rb') as fin:
+        lsb = parse_lsb(fin)
+        print(json.dumps(lsb, indent=4))
+
+
+@click.command()
 @click.argument('archive', type=click.Path(exists=True))
 @click.argument('path', required=False)
 def details(archive, path):
@@ -92,3 +102,4 @@ def details(archive, path):
 cli.add_command(list_all)
 cli.add_command(extract)
 cli.add_command(details)
+cli.add_command(lsb_to_json)
