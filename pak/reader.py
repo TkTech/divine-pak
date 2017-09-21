@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
+import zlib
 import struct
 from collections import namedtuple, OrderedDict
 
@@ -132,7 +133,18 @@ class PAKFileReader(object):
             self.archive_handles[path_or_entry.archive_num] = parent_archive
 
         parent_archive.seek(path_or_entry.offset)
-        return parent_archive.read(path_or_entry.size)
+        contents = parent_archive.read(path_or_entry.size)
+
+        if path_or_entry.is_lz4block:
+            return lz4.block.decompress(
+                contents,
+                path_or_entry.real_size
+            )
+        elif path_or_entry.is_zlib:
+            return zlib.decompress(contents)
+        else:
+            return contents
+
 
     def __getitem__(self, key):
         return self.file_table[key]

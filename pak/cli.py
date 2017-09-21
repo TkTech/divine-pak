@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import re
 import sys
 import zlib
 import json
@@ -38,6 +39,16 @@ def list_all(archive):
         print(path)
 
 
+@click.command('grep')
+@click.argument('archive', type=click.Path(exists=True))
+@click.argument('pattern')
+def grep(archive, pattern):
+    reader = PAKFileReader(archive)
+    for path, entry in reader.file_table.iteritems():
+        if re.search(pattern, reader.read(entry)):
+            print(path)
+
+
 @click.command()
 @click.argument('archive', type=click.Path(exists=True))
 @click.argument('path')
@@ -47,16 +58,7 @@ def extract(archive, path, lsb_to_json):
     """
     reader = PAKFileReader(archive)
     entry = reader[path]
-
-    if entry.is_lz4block:
-        contents = lz4.block.decompress(
-            reader.read(entry),
-            entry.real_size
-        )
-    elif entry.is_zlib:
-        contents = zlib.decompress(reader.read(entry))
-    else:
-        contents = reader.read(entry)
+    contents = reader.read(entry)
 
     if lsb_to_json:
         json.dump(
@@ -108,3 +110,4 @@ def details(archive, path):
 cli.add_command(list_all)
 cli.add_command(extract)
 cli.add_command(details)
+cli.add_command(grep)
