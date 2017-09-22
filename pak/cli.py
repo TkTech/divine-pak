@@ -43,10 +43,15 @@ def list_all(archive):
 @click.argument('archive', type=click.Path(exists=True))
 @click.argument('pattern')
 def grep(archive, pattern):
+    """Search all files within the PAK for the given pattern.
+
+    Prints the full path of each file with at least one match.
+    """
     reader = PAKFileReader(archive)
     for path, entry in reader.file_table.iteritems():
         if re.search(pattern, reader.read(entry)):
             print(path)
+            break
 
 
 @click.command()
